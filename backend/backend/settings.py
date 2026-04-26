@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     'rest_framework',
+    'drf_spectacular',
 
     'resources',
     'interactions',
@@ -73,7 +74,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "backend.wsgi.application"
 
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'EchoBridge API',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
+
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
     ],
