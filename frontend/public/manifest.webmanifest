@@ -1,0 +1,18 @@
+{
+  "name": "EchoBridge",
+  "short_name": "EchoBridge",
+  "description": "A voice-first, accessible support web app.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "64x64",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

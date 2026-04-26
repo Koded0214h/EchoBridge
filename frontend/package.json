@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "scan:a11y": "npx @scan-a11y/cli http://localhost:4173 --threshold=critical",
     "preview": "vite preview"
   },
   "dependencies": {
