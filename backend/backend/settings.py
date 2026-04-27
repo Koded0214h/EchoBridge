@@ -15,6 +15,8 @@ import os
 import dj_database_url
 from pathlib import Path
 
+load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -83,6 +85,7 @@ WSGI_APPLICATION = "backend.wsgi.application"
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'EchoBridge API',
+    'DESCRIPTION': 'Voice-first support platform for people with disabilities.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }
@@ -99,14 +102,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
-}
-
-
-SPECTACULAR_SETTINGS = {
-    'TITLE': 'EchoBridge API',
-    'DESCRIPTION': 'Voice-first support platform for people with disabilities.',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
 }
 
 # Database
