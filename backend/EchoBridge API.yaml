@@ -1,0 +1,154 @@
+openapi: 3.0.3
+info:
+  title: EchoBridge API
+  version: 1.0.0
+  description: Voice-first support platform for people with disabilities.
+paths:
+  /api/categories/:
+    get:
+      operationId: categories_list
+      tags:
+      - categories
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+          description: ''
+  /api/match/:
+    post:
+      operationId: match_create
+      tags:
+      - match
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/resources/:
+    get:
+      operationId: resources_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - resources
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResourceList'
+          description: ''
+  /api/resources/{id}/:
+    get:
+      operationId: resources_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - resources
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+          description: ''
+components:
+  schemas:
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        slug:
+          type: string
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        icon:
+          type: string
+          description: Emoji or CSS class for frontend
+          maxLength: 50
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/Resource'
+          readOnly: true
+      required:
+      - id
+      - name
+      - resources
+    PaginatedResourceList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Resource'
+    Resource:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        contact_info:
+          type: string
+          description: Phone, URL, etc.
+          maxLength: 300
+        audio_fallback_text:
+          type: string
+          description: Alternative read-aloud text; defaults to description
+        keywords:
+          type: string
+          description: Comma-separated trigger words
+          maxLength: 500
+        category_name:
+          type: string
+          readOnly: true
+      required:
+      - category_name
+      - description
+      - id
+      - title

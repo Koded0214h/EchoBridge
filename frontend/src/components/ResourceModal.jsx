@@ -1,10 +1,12 @@
+import PropTypes from 'prop-types'
 import { useEffect, useRef } from 'react'
 
 export function ResourceModal({ onClose, onReadAloud, resource }) {
-  const closeButtonRef = useRef(null)
+  const readAloudRef = useRef(null)
 
   useEffect(() => {
-    closeButtonRef.current?.focus()
+    // Focus the primary action so screen reader users hear the resource immediately.
+    readAloudRef.current?.focus()
 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
@@ -21,13 +23,17 @@ export function ResourceModal({ onClose, onReadAloud, resource }) {
     <div
       className="modal-backdrop"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          onClose()
-        }
+        if (event.target === event.currentTarget) onClose()
       }}
       role="presentation"
     >
-      <section aria-describedby="resource-description" aria-labelledby="resource-title" aria-modal="true" className="modal-card" role="dialog">
+      <section
+        aria-describedby="resource-description"
+        aria-labelledby="resource-title"
+        aria-modal="true"
+        className="modal-card"
+        role="dialog"
+      >
         <div className="panel-header">
           <p className="eyebrow">Resource details</p>
           <h3 id="resource-title">{resource.title}</h3>
@@ -39,25 +45,33 @@ export function ResourceModal({ onClose, onReadAloud, resource }) {
         </p>
 
         <dl className="resource-details">
-          <div>
-            <dt>Contact</dt>
-            <dd>{resource.contact}</dd>
-          </div>
-          <div>
-            <dt>Audio</dt>
-            <dd>{resource.audioText}</dd>
-          </div>
+          <dt>Contact</dt>
+          <dd>{resource.contact}</dd>
+          <dt>Audio text</dt>
+          <dd>{resource.audioText}</dd>
         </dl>
 
         <div className="button-row button-row--wrap">
-          <button className="primary-button" onClick={onReadAloud} type="button">
+          <button className="primary-button" ref={readAloudRef} onClick={onReadAloud} type="button">
             Read aloud
           </button>
-          <button className="secondary-button" ref={closeButtonRef} onClick={onClose} type="button">
+          <button className="secondary-button" onClick={onClose} type="button">
             Close
           </button>
         </div>
       </section>
     </div>
   )
+}
+
+ResourceModal.propTypes = {
+  onClose: PropTypes.func.isRequired,
+  onReadAloud: PropTypes.func.isRequired,
+  resource: PropTypes.shape({
+    title: PropTypes.string.isRequired,
+    description: PropTypes.string,
+    contact: PropTypes.string,
+    audioText: PropTypes.string,
+    category: PropTypes.string,
+  }).isRequired,
 }

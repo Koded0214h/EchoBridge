@@ -70,9 +70,19 @@ export const DEFAULT_RESOURCE = {
     'How can we help? You can speak, type, or browse the full list of support resources.',
 }
 
+function normalizeContractions(text) {
+  return text
+    .replace(/n't/gi, ' not')
+    .replace(/'re/gi, ' are')
+    .replace(/'ve/gi, ' have')
+    .replace(/'ll/gi, ' will')
+    .replace(/'m/gi, ' am')
+    .replace(/'d/gi, ' would')
+    .replace(/'/g, '') // strip remaining apostrophes
+}
+
 function tokenizeInput(inputText) {
-  return inputText
-    .toLowerCase()
+  return normalizeContractions(inputText.toLowerCase())
     .split(/[^a-z0-9]+/)
     .map((word) => word.trim())
     .filter(Boolean)
