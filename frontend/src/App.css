@@ -401,6 +401,12 @@
   font-size: 1rem;
 }
 
+.voice-input__button--starting {
+  background: rgba(255, 215, 0, 0.06);
+  border-color: rgba(255, 215, 0, 0.2);
+  cursor: wait;
+}
+
 .voice-input__button--listening {
   background: rgba(255, 215, 0, 0.16);
   border-color: rgba(255, 215, 0, 0.5);

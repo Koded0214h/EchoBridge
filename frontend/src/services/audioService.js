@@ -16,7 +16,9 @@ function getSpeechSynthesis() {
 
 function getSpeechRecognitionConstructor() {
   if (typeof window === 'undefined') return null
-  return window.SpeechRecognition ?? window.webkitSpeechRecognition ?? null
+  // Prefer webkitSpeechRecognition in Chromium-based browsers (Chrome, Edge)
+  // as the unprefixed SpeechRecognition is sometimes present but broken or experimental.
+  return window.webkitSpeechRecognition ?? window.SpeechRecognition ?? null
 }
 
 function emitSpeechState(detail) {
@@ -211,15 +213,21 @@ export function createSpeechRecognizer({ lang = 'en-US', onEnd, onError, onResul
   recognition.onstart = () => onStart?.()
 
   recognition.onresult = (event) => {
+    if (!event.results) return
     const result = event.results[event.resultIndex ?? 0]
+    if (!result || !result.length) return
 
     // Pick the alternative with the highest confidence score.
     let best = result[0]
     for (let i = 1; i < result.length; i++) {
-      if (result[i].confidence > best.confidence) best = result[i]
+      if (result[i] && result[i].confidence > best.confidence) {
+        best = result[i]
+      }
     }
 
-    const transcript = best.transcript.trim()
+    const transcript = (best.transcript || '').trim()
+    if (!transcript) return
+
     // confidence=0 means the browser didn't report it (treat as acceptable).
     // Only reject if the browser reports a meaningful but very low score.
     const confident = best.confidence === 0 || best.confidence >= 0.4
@@ -228,7 +236,10 @@ export function createSpeechRecognizer({ lang = 'en-US', onEnd, onError, onResul
   }
 
   recognition.onerror = (event) => {
-    onError?.(event.error || 'recognition-failed')
+    // Some browsers (like Edge) might fire error with 'service-not-allowed'
+    // or other codes that indicate speech service issues.
+    const error = event?.error || 'recognition-failed'
+    onError?.(error)
   }
 
   recognition.onend = () => onEnd?.()

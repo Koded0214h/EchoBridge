@@ -13,6 +13,7 @@ const ERROR_MESSAGES = {
   'network-error': 'A network error occurred during speech recognition. Please try again.',
   'no-speech': 'No speech was detected. Please try again or type your request.',
   'aborted': 'Listening was stopped.',
+  'language-not-supported': 'The selected language is not supported by this browser.',
 }
 
 function MicIcon() {
@@ -75,10 +76,13 @@ export const VoiceInputButton = forwardRef(function VoiceInputButton(
       return
     }
 
-    if (status === 'listening') {
+    if (status === 'listening' || status === 'starting') {
       stopListening()
       return
     }
+
+    setStatus('starting')
+    setMessage('Starting microphone…')
 
     const recognition = createSpeechRecognizer({
       lang: 'en-US',
@@ -158,7 +162,7 @@ export const VoiceInputButton = forwardRef(function VoiceInputButton(
     }
   }, [])
 
-  const isListening = status === 'listening'
+  const isActive = status === 'listening' || status === 'starting'
   const notSupported = !isRecognitionSupported()
 
   return (
@@ -167,23 +171,29 @@ export const VoiceInputButton = forwardRef(function VoiceInputButton(
         {...buttonProps}
         ref={forwardedRef}
         aria-disabled={notSupported}
-        aria-pressed={isListening}
+        aria-pressed={isActive}
         className={`voice-input__button voice-input__button--${status}`}
         onClick={startListening}
         title={notSupported ? 'Voice input unavailable — use Chrome or Edge' : undefined}
         onKeyDown={(event) => {
-          if (event.key === 'Escape' && isListening) {
+          if (event.key === 'Escape' && isActive) {
             event.preventDefault()
             stopListening()
           }
         }}
         type="button"
       >
-        <span className={`voice-input__icon ${isListening ? 'voice-input__icon--wave' : ''}`}>
+        <span className={`voice-input__icon ${status === 'listening' ? 'voice-input__icon--wave' : ''}`}>
           <MicIcon />
         </span>
         <span className="voice-input__label">
-          {isListening ? 'Listening…' : status === 'processing' ? 'Processing…' : 'Speak'}
+          {status === 'starting'
+            ? 'Starting…'
+            : status === 'listening'
+              ? 'Listening…'
+              : status === 'processing'
+                ? 'Processing…'
+                : 'Speak'}
         </span>
       </button>
 
