@@ -159,15 +159,18 @@ export const VoiceInputButton = forwardRef(function VoiceInputButton(
   }, [])
 
   const isListening = status === 'listening'
+  const notSupported = !isRecognitionSupported()
 
   return (
     <div className={`voice-input ${className}`.trim()}>
       <button
         {...buttonProps}
         ref={forwardedRef}
+        aria-disabled={notSupported}
         aria-pressed={isListening}
         className={`voice-input__button voice-input__button--${status}`}
         onClick={startListening}
+        title={notSupported ? 'Voice input unavailable — use Chrome or Edge' : undefined}
         onKeyDown={(event) => {
           if (event.key === 'Escape' && isListening) {
             event.preventDefault()

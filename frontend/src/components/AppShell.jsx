@@ -3,6 +3,9 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { ErrorBoundary } from './ErrorBoundary.jsx'
 import { isRecognitionSupported, isSpeechSupported } from '../services/audioService.js'
 
+const speechAvailable = isSpeechSupported()
+const recognitionAvailable = isRecognitionSupported()
+
 export function AppShell() {
   const [notice, setNotice] = useState('')
 
@@ -25,6 +28,16 @@ export function AppShell() {
         </nav>
       </header>
 
+      {!recognitionAvailable || !speechAvailable ? (
+        <div className="browser-compat-banner" role="note">
+          {!recognitionAvailable && !speechAvailable
+            ? 'Your browser does not support voice input or text-to-speech. For full audio features, open EchoBridge in Chrome or Edge.'
+            : !recognitionAvailable
+              ? 'Voice input is not supported in this browser — typing still works fully. For microphone support, try Chrome or Edge.'
+              : 'Text-to-speech is not available in this browser. Try Chrome or Edge for audio responses.'}
+        </div>
+      ) : null}
+
       {notice ? (
         <div aria-live="polite" className="global-notice" role="status">
           {notice}
@@ -44,8 +57,8 @@ export function AppShell() {
           Keyboard ready, speech ready, and designed to stay clear when speech is not available.
         </p>
         <p>
-          Speech recognition: {isRecognitionSupported() ? 'available' : 'typing only'} · TTS:{' '}
-          {isSpeechSupported() ? 'available' : 'not available'}
+          Speech recognition: {recognitionAvailable ? 'available' : 'typing only'} · TTS:{' '}
+          {speechAvailable ? 'available' : 'not available'}
         </p>
       </footer>
     </div>

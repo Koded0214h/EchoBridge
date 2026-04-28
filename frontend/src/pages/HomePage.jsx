@@ -43,7 +43,7 @@ function OnboardingPrompt({ onBrowse, onComplete, onRequest, preferences }) {
       }
     }
     speakPrompt()
-    return () => { cancelled = true }
+    return () => { cancelled = true; stopSpeaking() }
   }, [preferences.ttsRate])
 
   function submitRequest(requestText, mode) {
@@ -171,6 +171,9 @@ export function HomePage() {
       setLastInputMode(mode)
       setErrorMessage('')
       setIsProcessing(true)
+      // Touch the speech synth synchronously inside the gesture window so Chrome
+      // registers user activation before we hit any await.
+      stopSpeaking()
 
       try {
         // Try the API first; fall back to local matching if unreachable
@@ -190,12 +193,16 @@ export function HomePage() {
         setNotice(`Matched: ${matchedResource.title}`)
 
         if (userPreferences.autoPlay && isSpeechSupported()) {
-          stopSpeaking()
           setIsSpeaking(true)
           try {
             await speak(matchedResource.audioText, userPreferences.ttsRate, 1.0, userPreferences.ttsVoice)
-          } catch {
-            setErrorMessage('Speech playback was blocked or is unavailable.')
+          } catch (err) {
+            // 'not-allowed' = Chrome blocked autoplay before a user gesture unlocked
+            // the synth. Don't show an error — the "Play again" button (a direct
+            // gesture) will work after the stuck state is cleared in speak().
+            if (err?.message !== 'not-allowed') {
+              setErrorMessage('Speech playback was blocked or is unavailable.')
+            }
           } finally {
             setIsSpeaking(false)
           }

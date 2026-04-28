@@ -4,6 +4,11 @@ export const ONBOARDING_PROMPT = 'How would you like to get help today? You can 
 
 const SPEECH_TIMEOUT_MS = 30_000
 
+// Monotonic counter used to detect superseded speak() calls. When React
+// StrictMode double-invokes an effect both calls increment this; the first
+// call sees a stale ID after loadVoices() resolves and bails out silently.
+let _callId = 0
+
 function getSpeechSynthesis() {
   if (typeof window === 'undefined') return null
   return window.speechSynthesis ?? null
@@ -71,8 +76,8 @@ async function loadVoices(synth) {
       { once: true },
     )
 
-    // Fallback for browsers that never fire voiceschanged.
-    timeoutId = window.setTimeout(() => resolve(synth.getVoices()), 1000)
+    // Fallback for browsers that never fire voiceschanged (Firefox is slow here).
+    timeoutId = window.setTimeout(() => resolve(synth.getVoices()), 2500)
   })
 }
 
@@ -105,12 +110,20 @@ export async function speak(text, rate = 0.9, pitch = 1.0, voiceName = '') {
   const synth = getSpeechSynthesis()
   if (!synth) throw new Error('Speech synthesis is not available in this browser.')
 
+  // Claim a slot. If another speak() (or stopSpeaking()) runs before loadVoices
+  // resolves, our callId will be stale and we bail — prevents double-speech from
+  // React StrictMode double-invoking effects.
+  const callId = ++_callId
+
   const utterance = new SpeechSynthesisUtterance(text)
   utterance.lang = 'en-US'
   utterance.rate = rate
   utterance.pitch = pitch
 
   const voices = await loadVoices(synth)
+
+  if (callId !== _callId) return  // superseded — bail cleanly
+
   const voice = voiceName
     ? (voices.find((v) => v.name === voiceName) ?? getVoice(voices))
     : getVoice(voices)
@@ -140,6 +153,12 @@ export async function speak(text, rate = 0.9, pitch = 1.0, voiceName = '') {
       if (event.error === 'interrupted' || event.error === 'canceled') {
         settle(resolve)
       } else {
+        // Chrome: 'not-allowed' leaves the synth in a stuck state where all
+        // subsequent speak() calls also fail. cancel()+resume() resets it.
+        if (event.error === 'not-allowed') {
+          try { synth.cancel() } catch { /* ignore */ }
+          try { synth.resume() } catch { /* ignore */ }
+        }
         settle(reject, new Error(event.error || 'Speech synthesis failed.'))
       }
     }
@@ -150,6 +169,11 @@ export async function speak(text, rate = 0.9, pitch = 1.0, voiceName = '') {
       settle(reject, new Error('Speech timed out.'))
     }, SPEECH_TIMEOUT_MS)
 
+    // Firefox: cancel() leaves speechSynthesis paused; un-pause before speaking
+    // or the new utterance is silently dropped. Chrome is never paused here so
+    // this check is a no-op in Chrome — do NOT use a deferred setTimeout because
+    // calling resume() while Chrome is actively speaking interrupts the utterance.
+    if (synth.paused) synth.resume()
     synth.speak(utterance)
   })
 }
@@ -157,7 +181,12 @@ export async function speak(text, rate = 0.9, pitch = 1.0, voiceName = '') {
 export function stopSpeaking() {
   const synth = getSpeechSynthesis()
   if (!synth) return
+  ++_callId  // invalidate any in-flight speak() calls that haven't reached synth.speak() yet
   synth.cancel()
+  // Firefox: cancel() synchronously sets paused=true; resume() immediately clears
+  // that so the next speak() isn't silently dropped. Chrome sets paused=false after
+  // cancel() so this is a no-op there — safe to call unconditionally.
+  if (synth.paused) synth.resume()
   emitSpeechState({ isSpeaking: false })
 }
 

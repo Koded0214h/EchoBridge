@@ -46,6 +46,7 @@ export function SplashPage() {
 
     return () => {
       cancelled = true
+      stopSpeaking()
       window.clearTimeout(timerRef.current)
     }
   }, [handleAdvance, userPreferences.ttsRate])
